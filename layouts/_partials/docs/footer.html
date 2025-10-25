@@ -139,7 +139,7 @@ document.addEventListener('click', function(e) {
 })();
 </script> -->
 
-<script>
+<!-- <script>
 (function() {
   console.log('Download tracker script loaded');
 
@@ -190,6 +190,51 @@ document.addEventListener('click', function(e) {
       });
     });
   });
+})();
+</script> -->
+
+<script>
+(function() {
+  console.log('Download tracker script loaded');
+
+  document.body.addEventListener('click', function(e) {
+    const link = e.target.closest('.download-link[data-file]');
+    if (!link) return;
+
+    const url = link.href;
+    const file = link.dataset.file;
+
+    console.log('点击下载触发', file, url);
+
+    // 判断是左键点击且没有 Ctrl/Shift/Meta 键
+    const isLeftClick = e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey;
+
+    if (navigator.sendBeacon) {
+      // 使用 sendBeacon 发送统计
+      const blob = new Blob([JSON.stringify({ file })], { type: 'application/json' });
+      navigator.sendBeacon('https://download-collector.ctf-book.workers.dev/collect-download', blob);
+
+      if (isLeftClick) {
+        // 左键直接跳转
+        e.preventDefault();
+        window.location = url;
+      }
+      // 中键/右键仍然保留默认行为，不阻塞新标签页打开
+    } else {
+      // fallback: fetch
+      e.preventDefault();
+      fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file })
+      })
+      .catch(err => console.warn('统计失败', err))
+      .finally(() => {
+        if (isLeftClick) window.location = url;
+      });
+    }
+  });
+
 })();
 </script>
 
