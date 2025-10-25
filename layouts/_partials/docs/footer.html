@@ -21,7 +21,7 @@
 
 </div>
 
-<script>
+<!-- <script>
 document.addEventListener("DOMContentLoaded", function() {
   const links = document.querySelectorAll('.download-link[data-file]');
   links.forEach(link => {
@@ -40,6 +40,31 @@ document.addEventListener("DOMContentLoaded", function() {
         window.location = url;
       });
     });
+  });
+});
+</script> -->
+
+<script>
+document.addEventListener('click', function(e) {
+  // 找到最近的 .download-link[data-file] 元素
+  const link = e.target.closest('.download-link[data-file]');
+  if (!link) return; // 不是下载链接，直接返回
+
+  e.preventDefault(); // 阻止默认跳转
+  const url = link.href;
+  const fileName = link.dataset.file;
+
+  // 发送下载统计请求
+  fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file: fileName })
+  }).then(() => {
+    // 等 200ms 后再跳转下载文件
+    setTimeout(() => { window.location = url; }, 200);
+  }).catch(() => {
+    // 出错也跳转下载文件
+    window.location = url;
   });
 });
 </script>
