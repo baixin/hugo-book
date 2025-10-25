@@ -69,7 +69,7 @@ document.addEventListener('click', function(e) {
 });
 </script> -->
 
-<script>
+<!-- <script>
   // 全局事件委托，捕获所有点击事件
   document.addEventListener('click', function(e) {
     // 找到最近的下载链接
@@ -94,6 +94,47 @@ document.addEventListener('click', function(e) {
       window.location = url;
     });
   });
+</script> -->
+
+<script>
+(function() {
+  console.log('Download tracker script loaded');
+
+  // 事件委托绑定到 body，保证动态生成的 <a> 也能捕获
+  document.body.addEventListener('click', function(e) {
+    const link = e.target.closest('.download-link[data-file]');
+    if (!link) return; // 不是下载链接，忽略
+
+    e.preventDefault(); // 阻止默认跳转
+    const url = link.href;
+    const fileName = link.dataset.file;
+
+    console.log('点击下载触发', fileName, url);
+
+    fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: fileName })
+    })
+    .then(response => {
+      console.log('统计返回状态', response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log('统计数据', data);
+      // 延迟跳转，保证请求发送完成
+      setTimeout(() => {
+        window.location = url;
+      }, 200);
+    })
+    .catch(err => {
+      console.error('统计失败', err);
+      // 出错也跳转下载
+      window.location = url;
+    });
+  });
+
+})();
 </script>
 
 {{ partial "docs/prev-next" . }}
