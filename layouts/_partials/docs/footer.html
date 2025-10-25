@@ -96,7 +96,7 @@ document.addEventListener('click', function(e) {
   });
 </script> -->
 
-<script>
+<!-- <script>
 (function() {
   console.log('Download tracker script loaded');
 
@@ -136,6 +136,60 @@ document.addEventListener('click', function(e) {
     });
   });
 
+})();
+</script> -->
+
+<script>
+(function() {
+  console.log('Download tracker script loaded');
+
+  // 发送统计请求
+  function trackDownload(file) {
+    fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file })
+    })
+    .then(response => response.json())
+    .then(data => console.log('统计数据', data))
+    .catch(err => console.error('统计失败', err));
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const links = document.querySelectorAll('.download-link[data-file]');
+    if (links.length === 0) console.warn('没有找到任何 download-link');
+
+    links.forEach(link => {
+      // 左键单击
+      link.addEventListener('click', function(e) {
+        if (!e.ctrlKey && !e.metaKey) { // 普通左键
+          e.preventDefault();
+          const url = this.href;
+          const file = this.dataset.file;
+          console.log('左键点击触发', file, url);
+          trackDownload(file);
+          setTimeout(() => { window.location = url; }, 200);
+        } else {
+          console.log('左键+Ctrl/Cmd点击，新标签页打开，统计发送');
+          trackDownload(this.dataset.file);
+        }
+      });
+
+      // 中键点击
+      link.addEventListener('auxclick', function(e) {
+        if (e.button === 1) { // 中键
+          console.log('中键点击触发', this.dataset.file);
+          trackDownload(this.dataset.file);
+        }
+      });
+
+      // 右键菜单
+      link.addEventListener('contextmenu', function(e) {
+        console.log('右键菜单触发', this.dataset.file);
+        trackDownload(this.dataset.file);
+      });
+    });
+  });
 })();
 </script>
 
