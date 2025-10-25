@@ -22,124 +22,6 @@
 </div>
 
 <!-- <script>
-document.addEventListener("DOMContentLoaded", function() {
-  const links = document.querySelectorAll('.download-link[data-file]');
-  links.forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      const url = this.href;
-      const fileName = this.dataset.file;
-
-      fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: fileName })
-      }).then(() => {
-        setTimeout(() => { window.location = url; }, 200);
-      }).catch(() => {
-        window.location = url;
-      });
-    });
-  });
-});
-</script> -->
-
-<!-- <script>
-document.addEventListener('click', function(e) {
-  // 找到最近的 .download-link[data-file] 元素
-  const link = e.target.closest('.download-link[data-file]');
-  if (!link) return; // 不是下载链接，直接返回
-
-  e.preventDefault(); // 阻止默认跳转
-  const url = link.href;
-  const fileName = link.dataset.file;
-
-  // 发送下载统计请求
-  fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ file: fileName })
-  }).then(() => {
-    // 等 200ms 后再跳转下载文件
-    setTimeout(() => { window.location = url; }, 200);
-  }).catch(() => {
-    // 出错也跳转下载文件
-    window.location = url;
-  });
-});
-</script> -->
-
-<!-- <script>
-  // 全局事件委托，捕获所有点击事件
-  document.addEventListener('click', function(e) {
-    // 找到最近的下载链接
-    const link = e.target.closest('a.download-link[data-file]');
-    if (!link) return; // 如果不是下载链接，直接跳过
-
-    e.preventDefault(); // 阻止默认跳转
-
-    const url = link.href; // 获取文件真实地址
-    const fileName = link.dataset.file; // 获取 data-file 属性
-
-    // 发送统计请求
-    fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file: fileName })
-    }).then(() => {
-      // 成功后延迟跳转，确保统计完成
-      setTimeout(() => { window.location = url; }, 200);
-    }).catch(() => {
-      // 失败也直接跳转，不阻塞下载
-      window.location = url;
-    });
-  });
-</script> -->
-
-<!-- <script>
-(function() {
-  console.log('Download tracker script loaded');
-
-  // 事件委托绑定到 body，保证动态生成的 <a> 也能捕获
-  document.body.addEventListener('click', function(e) {
-    console.log('body click fired', e.target); // 先确认点击事件有被捕获
-    const link = e.target.closest('.download-link[data-file]');
-    console.log('closest link:', link);
-    if (!link) return; // 不是下载链接，忽略
-
-    e.preventDefault(); // 阻止默认跳转
-    const url = link.href;
-    const fileName = link.dataset.file;
-
-    console.log('点击下载触发', fileName, url);
-
-    fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file: fileName })
-    })
-    .then(response => {
-      console.log('统计返回状态', response.status);
-      return response.json();
-    })
-    .then(data => {
-      console.log('统计数据', data);
-      // 延迟跳转，保证请求发送完成
-      setTimeout(() => {
-        window.location = url;
-      }, 200);
-    })
-    .catch(err => {
-      console.error('统计失败', err);
-      // 出错也跳转下载
-      window.location = url;
-    });
-  });
-
-})();
-</script> -->
-
-<!-- <script>
 (function() {
   console.log('Download tracker script loaded');
 
@@ -202,39 +84,36 @@ document.addEventListener('click', function(e) {
     if (!link) return;
 
     const url = link.href;
-    const file = link.dataset.file;
+    const fileName = link.dataset.file;
 
-    console.log('点击下载触发', file, url);
+    console.log('点击下载触发', fileName, url);
 
-    // 判断是左键点击且没有 Ctrl/Shift/Meta 键
-    const isLeftClick = e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey;
+    const beaconUrl = 'https://download-collector.ctf-book.workers.dev/collect-download';
+    const data = JSON.stringify({ file: fileName });
 
     if (navigator.sendBeacon) {
-      // 使用 sendBeacon 发送统计
-      const blob = new Blob([JSON.stringify({ file })], { type: 'application/json' });
-      navigator.sendBeacon('https://download-collector.ctf-book.workers.dev/collect-download', blob);
-
-      if (isLeftClick) {
-        // 左键直接跳转
-        e.preventDefault();
-        window.location = url;
-      }
-      // 中键/右键仍然保留默认行为，不阻塞新标签页打开
+      // sendBeacon 版本
+      const blob = new Blob([data], { type: 'application/json' });
+      const sent = navigator.sendBeacon(beaconUrl, blob);
+      console.log('sendBeacon 发送状态:', sent);
     } else {
-      // fallback: fetch
-      e.preventDefault();
-      fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+      // fetch fallback 版本
+      fetch(beaconUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file })
-      })
-      .catch(err => console.warn('统计失败', err))
-      .finally(() => {
-        if (isLeftClick) window.location = url;
-      });
+        body: data,
+        keepalive: true // 允许在页面卸载时继续发送
+      }).then(r => console.log('fetch 发送状态:', r.status))
+        .catch(err => console.error('fetch 发送失败', err));
     }
-  });
 
+    // 左键单击立即跳转
+    if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+      e.preventDefault();
+      window.location = url;
+    }
+    // 中键/右键或带 Ctrl/Command/Shift 的点击保持默认行为
+  });
 })();
 </script>
 
