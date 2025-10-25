@@ -102,7 +102,9 @@ document.addEventListener('click', function(e) {
 
   // 事件委托绑定到 body，保证动态生成的 <a> 也能捕获
   document.body.addEventListener('click', function(e) {
+    console.log('body click fired', e.target); // 先确认点击事件有被捕获
     const link = e.target.closest('.download-link[data-file]');
+    console.log('closest link:', link);
     if (!link) return; // 不是下载链接，忽略
 
     e.preventDefault(); // 阻止默认跳转
