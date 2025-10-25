@@ -21,6 +21,29 @@
 
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const links = document.querySelectorAll('.download-link[data-file]');
+  links.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const url = this.href;
+      const fileName = this.dataset.file;
+
+      fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: fileName })
+      }).then(() => {
+        setTimeout(() => { window.location = url; }, 200);
+      }).catch(() => {
+        window.location = url;
+      });
+    });
+  });
+});
+</script>
+
 {{ partial "docs/prev-next" . }}
 
 {{ $script := resources.Get "clipboard.js" | resources.Minify }}
