@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script> -->
 
-<script>
+<!-- <script>
 document.addEventListener('click', function(e) {
   // 找到最近的 .download-link[data-file] 元素
   const link = e.target.closest('.download-link[data-file]');
@@ -67,6 +67,33 @@ document.addEventListener('click', function(e) {
     window.location = url;
   });
 });
+</script> -->
+
+<script>
+  // 全局事件委托，捕获所有点击事件
+  document.addEventListener('click', function(e) {
+    // 找到最近的下载链接
+    const link = e.target.closest('a.download-link[data-file]');
+    if (!link) return; // 如果不是下载链接，直接跳过
+
+    e.preventDefault(); // 阻止默认跳转
+
+    const url = link.href; // 获取文件真实地址
+    const fileName = link.dataset.file; // 获取 data-file 属性
+
+    // 发送统计请求
+    fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: fileName })
+    }).then(() => {
+      // 成功后延迟跳转，确保统计完成
+      setTimeout(() => { window.location = url; }, 200);
+    }).catch(() => {
+      // 失败也直接跳转，不阻塞下载
+      window.location = url;
+    });
+  });
 </script>
 
 {{ partial "docs/prev-next" . }}
