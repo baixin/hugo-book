@@ -21,7 +21,7 @@
 
 </div>
 
-<script>
+<!-- <script>
 (function() {
   console.log('Download tracker script loaded');
 
@@ -73,49 +73,63 @@
     });
   });
 })();
-</script>
+</script> -->
 
-<!-- <script>
+<script>
 (function() {
   console.log('Download tracker script loaded');
 
-  document.body.addEventListener('click', function(e) {
-    const link = e.target.closest('.download-link[data-file]');
-    if (!link) return;
-
-    const url = link.href;
-    const fileName = link.dataset.file;
-
-    console.log('点击下载触发', fileName, url);
-
-    const beaconUrl = 'https://download-collector.ctf-book.workers.dev/collect-download';
-    const data = JSON.stringify({ file: fileName });
-
-    if (navigator.sendBeacon) {
-      // sendBeacon 版本
-      const blob = new Blob([data], { type: 'application/json' });
-      const sent = navigator.sendBeacon(beaconUrl, blob);
-      console.log('sendBeacon 发送状态:', sent);
-    } else {
-      // fetch fallback 版本
-      fetch(beaconUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: data,
-        keepalive: true // 允许在页面卸载时继续发送
-      }).then(r => console.log('fetch 发送状态:', r.status))
-        .catch(err => console.error('fetch 发送失败', err));
+  function trackDownload(file, url) {
+    // 发送 GA 事件
+    if (typeof gtag === "function") {
+      gtag('event', 'file_download', {
+        'file_name': file,
+        'file_url': url
+      });
     }
 
-    // 左键单击立即跳转
-    if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-      e.preventDefault();
-      window.location = url;
-    }
-    // 中键/右键或带 Ctrl/Command/Shift 的点击保持默认行为
+    // 如果还想统计到 Worker KV 或其他接口，可以在这里加入 fetch
+    // fetch('https://download-collector.ctf-book.workers.dev/collect-download', {...})
+
+    console.log('统计触发', file, url);
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const links = document.querySelectorAll('.download-link[data-file]');
+    if (links.length === 0) console.warn('没有找到任何 download-link');
+
+    links.forEach(link => {
+
+      // 左键单击
+      link.addEventListener('click', function(e) {
+        const url = this.href;
+        const file = this.dataset.file;
+
+        if (!e.ctrlKey && !e.metaKey) { 
+          e.preventDefault(); // 阻止默认直接跳转
+          trackDownload(file, url);
+          setTimeout(() => { window.location = url; }, 200); // 延迟跳转保证统计发送
+        } else {
+          // Ctrl/Cmd 打开新标签页，也统计
+          trackDownload(file, url);
+        }
+      });
+
+      // 中键点击
+      link.addEventListener('auxclick', function(e) {
+        if (e.button === 1) { 
+          trackDownload(this.dataset.file, this.href);
+        }
+      });
+
+      // 右键菜单
+      link.addEventListener('contextmenu', function(e) {
+        trackDownload(this.dataset.file, this.href);
+      });
+    });
   });
 })();
-</script> -->
+</script>
 
 {{ partial "docs/prev-next" . }}
 
