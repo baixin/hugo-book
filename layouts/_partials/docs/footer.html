@@ -75,6 +75,7 @@
 })();
 </script> -->
 
+<!-- // ok for mac and android, but not for iOS -->
 <script>
 (function() {
   console.log('Download tracker script loaded');
@@ -90,6 +91,14 @@
 
     // 如果还想统计到 Worker KV 或其他接口，可以在这里加入 fetch
     // fetch('https://download-collector.ctf-book.workers.dev/collect-download', {...})
+    fetch('https://download-collector.ctf-book.workers.dev/collect-download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file })
+    })
+    .then(response => response.json())
+    .then(data => console.log('统计数据', data))
+    .catch(err => console.error('统计失败', err));
 
     console.log('统计触发', file, url);
   }
@@ -130,6 +139,62 @@
   });
 })();
 </script>
+
+<!-- <script>
+(function() {
+  // 防止重复绑定
+  if (window._downloadShortcodeBound) return;
+  window._downloadShortcodeBound = true;
+
+  function trackDownload(file, url) {
+    if (typeof gtag === "function") {
+      if (navigator.sendBeacon) {
+        const payload = JSON.stringify({ file_name: file, file_url: url });
+        navigator.sendBeacon('https://www.google-analytics.com/collect', payload);
+        console.log('sendBeacon 发送', file, url);
+      } else {
+        gtag('event', 'file_download', { file_name: file, file_url: url });
+        console.log('gtag 发送', file, url);
+      }
+    }
+  }
+
+  function bindDownloadLinks() {
+    const links = document.querySelectorAll('.download-link[data-file]');
+    if (links.length === 0) return;
+
+    links.forEach(link => {
+      const handler = function(e) {
+        const url = this.href;
+        const file = this.dataset.file;
+
+        if (!e.ctrlKey && !e.metaKey && e.type === 'click') {
+          e.preventDefault();
+          trackDownload(file, url);
+          setTimeout(() => { window.location = url; }, 200);
+        } else if (e.type === 'click') {
+          trackDownload(file, url);
+        } else if (e.type === 'auxclick' && e.button === 1) {
+          trackDownload(file, url);
+        } else if (e.type === 'contextmenu') {
+          trackDownload(file, url);
+        } else if (e.type === 'touchend') {
+          e.preventDefault();
+          trackDownload(file, url);
+          setTimeout(() => { window.location = url; }, 200);
+        }
+      };
+
+      link.addEventListener('click', handler);
+      link.addEventListener('auxclick', handler);
+      link.addEventListener('contextmenu', handler);
+      link.addEventListener('touchend', handler);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", bindDownloadLinks);
+})();
+</script> -->
 
 {{ partial "docs/prev-next" . }}
 
